@@ -1,6 +1,10 @@
+// 우측에서 슬라이드로 열리는 채팅 패널 컴포넌트입니다.
+// 메시지 목록 표시, 입력창, 전송 기능을 담당합니다.
+// 실시간 메시지 수신 및 전송 로직은 useChat 훅에서 처리합니다.
 import { useState, useEffect, useRef } from 'react';
 import { useChat } from '../hooks/useChat';
 
+// 타임스탬프를 "오전 09:30" 형식으로 변환
 function formatTime(ts) {
   return new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 }
@@ -8,8 +12,10 @@ function formatTime(ts) {
 export default function ChatPanel({ nickname, onClose }) {
   const { messages, loading, sendMessage } = useChat();
   const [input, setInput] = useState('');
+  // 새 메시지가 올 때 자동으로 맨 아래로 스크롤하기 위한 ref
   const bottomRef = useRef(null);
 
+  // 메시지 목록이 바뀔 때마다 맨 아래로 스크롤
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -17,9 +23,10 @@ export default function ChatPanel({ nickname, onClose }) {
   function handleSend() {
     if (!input.trim()) return;
     sendMessage(nickname, input.trim());
-    setInput('');
+    setInput(''); // 전송 후 입력창 초기화
   }
 
+  // Enter 키로 전송 (Shift+Enter는 줄바꿈 — 현재 input이라 줄바꿈 없음)
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -29,9 +36,10 @@ export default function ChatPanel({ nickname, onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* 헤더 */}
+      {/* 헤더: 방 이름 + 닫기 버튼 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div className="flex items-center gap-2">
+          {/* 초록 점 = 라이브 표시 */}
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-white/80 text-sm font-medium">빗소리 방</span>
         </div>
@@ -53,9 +61,11 @@ export default function ChatPanel({ nickname, onClose }) {
           <p className="text-white/30 text-sm text-center mt-4">첫 메시지를 남겨보세요 ☔</p>
         ) : (
           messages.map((msg) => {
+            // 내 메시지는 오른쪽(파란색), 상대방 메시지는 왼쪽(흰색 반투명)
             const isMine = msg.nickname === nickname;
             return (
               <div key={msg.id} className={`flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}>
+                {/* 상대방 메시지에만 닉네임 표시 */}
                 {!isMine && (
                   <span className="text-white/40 text-xs px-1">{msg.nickname}</span>
                 )}
@@ -72,10 +82,11 @@ export default function ChatPanel({ nickname, onClose }) {
             );
           })
         )}
+        {/* 스크롤 앵커 — 새 메시지 도착 시 여기로 스크롤 */}
         <div ref={bottomRef} />
       </div>
 
-      {/* 입력창 */}
+      {/* 메시지 입력창 */}
       <div className="px-3 py-3 border-t border-white/10">
         <div className="flex gap-2 items-end">
           <input
@@ -89,6 +100,7 @@ export default function ChatPanel({ nickname, onClose }) {
               rounded-xl px-3 py-2 outline-none border border-white/10
               focus:border-white/30 transition-colors resize-none"
           />
+          {/* 내용이 없으면 전송 버튼 비활성화 */}
           <button
             onClick={handleSend}
             disabled={!input.trim()}
